@@ -60,17 +60,19 @@
 
                             <div class="mb-3">
                                 <div class="alert alert-info">
-                                    <strong>Format Kolom Excel:</strong><br>
-                                    1. Ticket Number<br>
-                                    2. Date Created<br>
-                                    3. Customer Name<br>
-                                    4. Service Type<br>
-                                    5. Priority<br>
-                                    6. Status<br>
-                                    7. Assigned To<br>
-                                    8. Description<br>
-                                    9. Resolution<br>
-                                    10. Date Resolved
+                                    <strong>Format Kolom Excel (76 Kolom) - Sesuai Header Excel:</strong><br>
+                                    <small>
+                                        1. ticket_id | 2. subject | 3. remark | 4. priority_id | 5. priority_name<br>
+                                        6. ticket_status_name | 7. unit_id | 8. unit_name | 9. informant_id | 10. informant_name<br>
+                                        11. informant_hp | 12. informant_email | 13. customer_id | 14. customer_name | 15. customer_hp<br>
+                                        16. customer_email | 17. date_origin_interaction | 18. date_start_interaction | 19. date_open | 20. date_close<br>
+                                        21. date_last_update | 22. is_escalated | 23. created_by_name | 24. updated_by_name | 25. channel_id<br>
+                                        26. session_id | 27. category_id | 28. category_name | 29. date_created_at | 30. sla<br>
+                                        31. channel_name | 32. <strong>mainCategory</strong> | 33. category | 34. <strong>subCategory</strong> | 35. <strong>detailSubCategory</strong><br>
+                                        36. <strong>detailSubCategory2</strong> | ... dan seterusnya hingga 76 kolom...<br><br>
+                                        <em>Pastikan header Excel persis seperti contoh di atas!</em><br>
+                                        <strong>Note:</strong> Beberapa field menggunakan camelCase: mainCategory, subCategory, detailSubCategory, dll.
+                                    </small>
                                 </div>
                             </div>
 

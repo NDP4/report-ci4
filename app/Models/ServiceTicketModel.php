@@ -7,22 +7,88 @@ use CodeIgniter\Model;
 class ServiceTicketModel extends Model
 {
     protected $table = 'service_tickets';
-    protected $primaryKey = 'id';
-    protected $useAutoIncrement = true;
+    protected $primaryKey = 'ticket_id';
+    protected $useAutoIncrement = false; // Changed because ticket_id is string
     protected $returnType = 'array';
     protected $useSoftDeletes = false;
     protected $protectFields = true;
     protected $allowedFields = [
-        'ticket_number',
-        'date_created',
+        'ticket_id',
+        'subject',
+        'remark',
+        'priority_id',
+        'priority_name',
+        'ticket_status_name',
+        'unit_id',
+        'unit_name',
+        'informant_id',
+        'informant_name',
+        'informant_hp',
+        'informant_email',
+        'customer_id',
         'customer_name',
-        'service_type',
-        'priority',
-        'status',
-        'assigned_to',
-        'description',
-        'resolution',
-        'date_resolved'
+        'customer_hp',
+        'customer_email',
+        'date_origin_interaction',
+        'date_start_interaction',
+        'date_open',
+        'date_close',
+        'date_last_update',
+        'is_escalated',
+        'created_by_name',
+        'updated_by_name',
+        'channel_id',
+        'session_id',
+        'category_id',
+        'category_name',
+        'date_created_at',
+        'sla',
+        'channel_name',
+        'main_category',
+        'category',
+        'sub_category',
+        'detail_sub_category',
+        'detail_sub_category2',
+        'regional',
+        'type_queue_priority',
+        'group_id',
+        'group_name',
+        'date_first_pickup_interaction',
+        'status_case',
+        'indihome_num',
+        'witel',
+        'feedback',
+        'date_first_response_interaction',
+        'date_pickup_interaction',
+        'date_end_interaction',
+        'case_in',
+        'case_out',
+        'account',
+        'account_name',
+        'informant_member_id',
+        'customer_member_id',
+        'shift',
+        'status_date',
+        'sentiment_incoming',
+        'sentiment_outgoing',
+        'sentiment_all',
+        'sentiment_service',
+        'parent_id',
+        'count_merged',
+        'source_id',
+        'source_name',
+        'msisdn',
+        'from_id',
+        'from_username',
+        'ticket_id_digipos',
+        'ticket_customer_consent',
+        'ticket_no_indi_home_alternatif',
+        'sla_second',
+        'informant_1',
+        'informant_2',
+        'customer_1',
+        'customer_2',
+        'ticket_no_k_t_p'
     ];
 
     protected $useTimestamps = true;
@@ -32,7 +98,7 @@ class ServiceTicketModel extends Model
 
     protected $validationRules = [];
     protected $validationMessages = [];
-    protected $skipValidation = true; // Skip validation for faster insert
+    protected $skipValidation = true;
     protected $cleanValidationRules = true;
 
     /**

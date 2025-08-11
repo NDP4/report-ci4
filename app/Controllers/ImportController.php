@@ -12,7 +12,7 @@ use CodeIgniter\HTTP\ResponseInterface;
 class ImportController extends BaseController
 {
     protected $serviceTicketModel;
-    private $batchSize = 1000; // Increase batch size for faster processing
+    private $batchSize = 500; // Reduce batch size to prevent memory issues
 
     public function __construct()
     {
@@ -107,8 +107,8 @@ class ImportController extends BaseController
 
     private function processExcelFileInBatches($filePath)
     {
-        // Optimize memory and performance settings
-        ini_set('memory_limit', '2048M');
+        // More aggressive memory optimization
+        ini_set('memory_limit', '-1'); // Unlimited memory
         ini_set('max_execution_time', 0);
         ini_set('max_input_time', -1);
 
@@ -153,14 +153,14 @@ class ImportController extends BaseController
         $highestRow = $worksheet->getHighestRow();
         log_message('info', "Excel file loaded. Highest row: {$highestRow}");
 
-        // Use the old method but optimized for better compatibility
-        $allData = $this->readAllDataCompatible($worksheet);
+        // Use streaming approach for large files
+        $allData = $this->readDataStreamingApproach($worksheet, $highestRow);
 
         log_message('info', "Data processed. Total records: " . count($allData));
 
         if (!empty($allData)) {
-            // Insert all data in optimized batches
-            $result = $this->serviceTicketModel->insertBatch($allData, null, 1000);
+            // Insert data in smaller batches to prevent memory issues
+            $result = $this->serviceTicketModel->insertBatch($allData, null, 500);
             log_message('info', "Insert batch result: {$result}");
         }
 
@@ -176,121 +176,191 @@ class ImportController extends BaseController
     }
 
     /**
-     * Compatible data reading method that works like the old version
+     * Streaming approach to handle large Excel files
      */
-    private function readAllDataCompatible($worksheet)
+    private function readDataStreamingApproach($worksheet, $highestRow)
     {
-        $highestRow = $worksheet->getHighestRow();
+        log_message('info', "Using streaming approach for large file processing");
+
         $data = [];
+        $processedCount = 0;
+        $batchSize = 1000; // Process in smaller batches
 
-        // Start from row 2 (skip header) and read row by row like before
-        for ($row = 2; $row <= $highestRow; $row++) {
+        // Process data in chunks to prevent memory exhaustion
+        for ($startRow = 2; $startRow <= $highestRow; $startRow += $batchSize) {
+            $endRow = min($startRow + $batchSize - 1, $highestRow);
+            $range = "A{$startRow}:BX{$endRow}";
+
             try {
-                // Read row data the old way - cell by cell for compatibility
-                $rowData = [
-                    $worksheet->getCell('A' . $row)->getValue(),
-                    $worksheet->getCell('B' . $row)->getValue(),
-                    $worksheet->getCell('C' . $row)->getValue(),
-                    $worksheet->getCell('D' . $row)->getValue(),
-                    $worksheet->getCell('E' . $row)->getValue(),
-                    $worksheet->getCell('F' . $row)->getValue(),
-                    $worksheet->getCell('G' . $row)->getValue(),
-                    $worksheet->getCell('H' . $row)->getValue(),
-                    $worksheet->getCell('I' . $row)->getValue(),
-                    $worksheet->getCell('J' . $row)->getValue(),
-                ];
+                log_message('info', "Processing range: {$range}");
+                $rangeData = $worksheet->rangeToArray($range, null, false, false, false);
 
-                // Skip empty rows
-                if (empty(array_filter($rowData))) {
-                    continue;
+                if (!empty($rangeData)) {
+                    foreach ($rangeData as $index => $rowData) {
+                        $actualRowNumber = $startRow + $index;
+
+                        // Skip empty rows
+                        if (empty(array_filter($rowData))) {
+                            continue;
+                        }
+
+                        $mappedData = $this->mapExcelRowToDatabase($rowData, $actualRowNumber);
+
+                        if (!empty($mappedData['ticket_id'])) {
+                            $data[] = $mappedData;
+                            $processedCount++;
+                        }
+
+                        // Process and insert data in smaller chunks to free memory
+                        if (count($data) >= 500) {
+                            $this->serviceTicketModel->insertBatch($data, null, 500);
+                            log_message('info', "Inserted batch of " . count($data) . " records");
+                            $data = []; // Clear array to free memory
+
+                            // Force garbage collection
+                            gc_collect_cycles();
+                        }
+                    }
                 }
 
-                $data[] = [
-                    'ticket_number' => $this->cleanValue($rowData[0]),
-                    'date_created' => $this->formatDate($rowData[1]),
-                    'customer_name' => $this->cleanValue($rowData[2]),
-                    'service_type' => $this->cleanValue($rowData[3]),
-                    'priority' => $this->cleanValue($rowData[4]),
-                    'status' => $this->cleanValue($rowData[5]),
-                    'assigned_to' => $this->cleanValue($rowData[6]),
-                    'description' => $this->cleanValue($rowData[7]),
-                    'resolution' => $this->cleanValue($rowData[8]),
-                    'date_resolved' => $this->formatDate($rowData[9]),
-                ];
-
-                // Debug: Log first few rows
-                if ($row <= 5) {
-                    log_message('info', "Row {$row} data: " . json_encode($rowData));
-                }
+                // Clear memory for large files
+                unset($rangeData);
             } catch (\Exception $e) {
-                log_message('error', "Error reading row {$row}: " . $e->getMessage());
+                log_message('error', "Error reading range {$range}: " . $e->getMessage());
                 continue;
             }
         }
 
-        return $data;
+        log_message('info', "Streaming approach total records: {$processedCount}");
+        return $data; // Return remaining data
     }
 
     /**
-     * Alternative: Keep the old method completely for troubleshooting
+     * Compatible data reading method with enhanced debugging
      */
-    private function readAllDataOptimized($worksheet)
+    private function readAllDataCompatible($worksheet)
     {
         $highestRow = $worksheet->getHighestRow();
-
-        // If only header row or empty, return empty
-        if ($highestRow <= 1) {
-            log_message('info', "File appears to be empty or only has header row");
-            return [];
-        }
-
+        $highestColumn = $worksheet->getHighestColumn();
         $data = [];
 
+        log_message('info', "Reading Excel: Rows={$highestRow}, Columns={$highestColumn}");
+
+        // Convert column letter to number for better debugging
+        $highestColumnIndex = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::columnIndexFromString($highestColumn);
+        log_message('info', "Highest column index: {$highestColumnIndex}");
+
+        // Get all data in one go to see the actual structure
         try {
-            // Read range data more efficiently
-            $range = 'A2:J' . $highestRow;
-            log_message('info', "Reading range: {$range}");
+            $allDataArray = $worksheet->toArray();
+            if (!empty($allDataArray)) {
+                $firstRowCount = count($allDataArray[0]);
+                log_message('info', "First row count from toArray(): {$firstRowCount}");
+                log_message('info', "First row sample: " . json_encode(array_slice($allDataArray[0], 0, 10)));
 
-            $allRows = $worksheet->rangeToArray($range, null, false, false, false);
-            log_message('info', "Range read successfully. Rows count: " . count($allRows));
-
-            foreach ($allRows as $index => $rowData) {
-                // Skip empty rows quickly
-                if (empty(array_filter($rowData))) {
-                    continue;
+                if (isset($allDataArray[1])) {
+                    $secondRowCount = count($allDataArray[1]);
+                    log_message('info', "Second row count: {$secondRowCount}");
+                    log_message('info', "Second row sample: " . json_encode(array_slice($allDataArray[1], 0, 10)));
                 }
 
-                $data[] = [
-                    'ticket_number' => $this->cleanValue($rowData[0]),
-                    'date_created' => $this->formatDate($rowData[1]),
-                    'customer_name' => $this->cleanValue($rowData[2]),
-                    'service_type' => $this->cleanValue($rowData[3]),
-                    'priority' => $this->cleanValue($rowData[4]),
-                    'status' => $this->cleanValue($rowData[5]),
-                    'assigned_to' => $this->cleanValue($rowData[6]),
-                    'description' => $this->cleanValue($rowData[7]),
-                    'resolution' => $this->cleanValue($rowData[8]),
-                    'date_resolved' => $this->formatDate($rowData[9]),
-                ];
+                // Use toArray() data since it reads all columns correctly
+                log_message('info', "Using toArray() method since it reads all columns correctly");
 
-                // Debug first few rows
-                if ($index < 3) {
-                    log_message('info', "Processing row " . ($index + 2) . ": " . json_encode($rowData));
+                // Process data starting from row 2 (skip header)
+                for ($i = 1; $i < count($allDataArray); $i++) {
+                    $rowData = $allDataArray[$i];
+
+                    // Debug first few rows
+                    if ($i <= 5) {
+                        log_message('info', "Row " . ($i + 1) . " column count: " . count($rowData));
+                        log_message('info', "Row " . ($i + 1) . " first 10 values: " . json_encode(array_slice($rowData, 0, 10)));
+                    }
+
+                    // Skip empty rows
+                    if (empty(array_filter($rowData))) {
+                        continue;
+                    }
+
+                    // Map columns to database fields
+                    $mappedData = $this->mapExcelRowToDatabase($rowData, $i + 1);
+
+                    if (!empty($mappedData['ticket_id'])) {
+                        $data[] = $mappedData;
+
+                        // Debug first few mapped rows
+                        if ($i <= 3) {
+                            $filledFields = array_filter($mappedData, function ($value) {
+                                return $value !== null && $value !== '';
+                            });
+                            log_message('info', "Row " . ($i + 1) . " mapped fields: " . count($filledFields) . " out of 76");
+                        }
+                    } else {
+                        log_message('warning', "Row " . ($i + 1) . " skipped - no ticket_id found");
+                    }
                 }
+
+                log_message('info', "Total processed records: " . count($data));
+                return $data;
             }
         } catch (\Exception $e) {
-            log_message('error', "Error in readAllDataOptimized: " . $e->getMessage());
-            // Fallback to compatible method
-            return $this->readAllDataCompatible($worksheet);
+            log_message('error', "Error using toArray(): " . $e->getMessage());
         }
 
-        return $data;
+        // If toArray() fails, fall back to the alternative method
+        log_message('warning', "toArray() failed, using alternative reading method");
+        return $this->readDataAlternativeMethod($worksheet, $highestRow);
     }
 
-    private function cleanValue($value)
+    /**
+     * Alternative reading method using range - updated to process all rows
+     */
+    private function readDataAlternativeMethod($worksheet, $highestRow)
     {
-        // Optimized cleaning function with proper parentheses
-        return ($value === null || $value === '') ? null : (trim((string)$value) ?: null);
+        log_message('info', "Using alternative reading method for all {$highestRow} rows");
+
+        // Read all data in batches to handle large files
+        $batchSize = 1000;
+        $data = [];
+
+        for ($startRow = 2; $startRow <= $highestRow; $startRow += $batchSize) {
+            $endRow = min($startRow + $batchSize - 1, $highestRow);
+            $range = "A{$startRow}:BX{$endRow}";
+
+            try {
+                log_message('info', "Reading range: {$range}");
+                $rangeData = $worksheet->rangeToArray($range, null, false, false, false);
+
+                if (!empty($rangeData)) {
+                    log_message('info', "Range batch - first row count: " . count($rangeData[0]));
+
+                    // Process each row in this batch
+                    foreach ($rangeData as $index => $rowData) {
+                        $actualRowNumber = $startRow + $index;
+
+                        // Skip empty rows
+                        if (empty(array_filter($rowData))) {
+                            continue;
+                        }
+
+                        $mappedData = $this->mapExcelRowToDatabase($rowData, $actualRowNumber);
+
+                        if (!empty($mappedData['ticket_id'])) {
+                            $data[] = $mappedData;
+                        }
+                    }
+                }
+
+                // Clear memory for large files
+                unset($rangeData);
+            } catch (\Exception $e) {
+                log_message('error', "Error reading range {$range}: " . $e->getMessage());
+                continue;
+            }
+        }
+
+        log_message('info', "Alternative method total records: " . count($data));
+        return $data;
     }
 
     private function parseSize($size)
@@ -329,6 +399,194 @@ class ImportController extends BaseController
         return null;
     }
 
+    /**
+     * Enhanced datetime formatting
+     */
+    private function formatDateTime($date)
+    {
+        if (empty($date) || $date === '-' || $date === 'null') {
+            return null;
+        }
+
+        // Remove quotes
+        if (is_string($date) && preg_match('/^\'(.*)\'$/', $date, $matches)) {
+            $date = $matches[1];
+        }
+
+        // Handle Excel date format
+        if (is_numeric($date) && $date > 1 && $date < 2958466) {
+            $unix_date = (int)(($date - 25569) * 86400);
+            return $unix_date > 0 ? date('Y-m-d H:i:s', $unix_date) : null;
+        }
+
+        if (is_string($date)) {
+            $date = trim($date);
+            if (empty($date)) return null;
+
+            // Handle DD.MM.YYYY H:i:s format
+            if (preg_match('/^(\d{2})\.(\d{2})\.(\d{4}) (\d{1,2}):(\d{2}):(\d{2})$/', $date, $matches)) {
+                $day = $matches[1];
+                $month = $matches[2];
+                $year = $matches[3];
+                $hour = $matches[4];
+                $minute = $matches[5];
+                $second = $matches[6];
+
+                return "{$year}-{$month}-{$day} {$hour}:{$minute}:{$second}";
+            }
+
+            $timestamp = strtotime($date);
+            return $timestamp !== false ? date('Y-m-d H:i:s', $timestamp) : null;
+        }
+
+        return null;
+    }
+
+    /**
+     * Map Excel row data to database fields with corrected field names
+     */
+    private function mapExcelRowToDatabase($rowData, $rowNumber = 0)
+    {
+        $totalColumns = count($rowData);
+
+        // Create mapping with correct field names based on Excel header
+        $mappedData = [
+            'ticket_id' => $this->cleanValue($this->getArrayValue($rowData, 0)),
+            'subject' => $this->cleanValue($this->getArrayValue($rowData, 1)),
+            'remark' => $this->cleanValue($this->getArrayValue($rowData, 2)),
+            'priority_id' => $this->cleanValue($this->getArrayValue($rowData, 3)),
+            'priority_name' => $this->cleanValue($this->getArrayValue($rowData, 4)),
+            'ticket_status_name' => $this->cleanValue($this->getArrayValue($rowData, 5)),
+            'unit_id' => $this->cleanNumericValue($this->getArrayValue($rowData, 6)),
+            'unit_name' => $this->cleanValue($this->getArrayValue($rowData, 7)),
+            'informant_id' => $this->cleanValue($this->getArrayValue($rowData, 8)),
+            'informant_name' => $this->cleanValue($this->getArrayValue($rowData, 9)),
+            'informant_hp' => $this->cleanValue($this->getArrayValue($rowData, 10)),
+            'informant_email' => $this->cleanValue($this->getArrayValue($rowData, 11)),
+            'customer_id' => $this->cleanValue($this->getArrayValue($rowData, 12)),
+            'customer_name' => $this->cleanValue($this->getArrayValue($rowData, 13)),
+            'customer_hp' => $this->cleanValue($this->getArrayValue($rowData, 14)),
+            'customer_email' => $this->cleanValue($this->getArrayValue($rowData, 15)),
+            'date_origin_interaction' => $this->formatDateTime($this->getArrayValue($rowData, 16)),
+            'date_start_interaction' => $this->formatDateTime($this->getArrayValue($rowData, 17)),
+            'date_open' => $this->formatDateTime($this->getArrayValue($rowData, 18)),
+            'date_close' => $this->formatDateTime($this->getArrayValue($rowData, 19)),
+            'date_last_update' => $this->formatDateTime($this->getArrayValue($rowData, 20)),
+            'is_escalated' => $this->cleanValue($this->getArrayValue($rowData, 21)),
+            'created_by_name' => $this->cleanValue($this->getArrayValue($rowData, 22)),
+            'updated_by_name' => $this->cleanValue($this->getArrayValue($rowData, 23)),
+            'channel_id' => $this->cleanNumericValue($this->getArrayValue($rowData, 24)),
+            'session_id' => $this->cleanValue($this->getArrayValue($rowData, 25)),
+            'category_id' => $this->cleanNumericValue($this->getArrayValue($rowData, 26)),
+            'category_name' => $this->cleanValue($this->getArrayValue($rowData, 27)),
+            'date_created_at' => $this->formatDateTime($this->getArrayValue($rowData, 28)),
+            'sla' => $this->cleanValue($this->getArrayValue($rowData, 29)),
+            'channel_name' => $this->cleanValue($this->getArrayValue($rowData, 30)),
+            'main_category' => $this->cleanValue($this->getArrayValue($rowData, 31)),
+            'category' => $this->cleanValue($this->getArrayValue($rowData, 32)),
+            'sub_category' => $this->cleanValue($this->getArrayValue($rowData, 33)),
+            'detail_sub_category' => $this->cleanValue($this->getArrayValue($rowData, 34)),
+            'detail_sub_category2' => $this->cleanValue($this->getArrayValue($rowData, 35)),
+            'regional' => $this->cleanNumericValue($this->getArrayValue($rowData, 36)),
+            'type_queue_priority' => $this->cleanValue($this->getArrayValue($rowData, 37)),
+            'group_id' => $this->cleanNumericValue($this->getArrayValue($rowData, 38)),
+            'group_name' => $this->cleanValue($this->getArrayValue($rowData, 39)),
+            'date_first_pickup_interaction' => $this->formatDateTime($this->getArrayValue($rowData, 40)),
+            'status_case' => $this->cleanValue($this->getArrayValue($rowData, 41)),
+            'indihome_num' => $this->cleanNumericValue($this->getArrayValue($rowData, 42)),
+            'witel' => $this->cleanValue($this->getArrayValue($rowData, 43)),
+            'feedback' => $this->cleanValue($this->getArrayValue($rowData, 44)),
+            'date_first_response_interaction' => $this->formatDateTime($this->getArrayValue($rowData, 45)),
+            'date_pickup_interaction' => $this->formatDateTime($this->getArrayValue($rowData, 46)),
+            'date_end_interaction' => $this->formatDateTime($this->getArrayValue($rowData, 47)),
+            'case_in' => $this->cleanNumericValue($this->getArrayValue($rowData, 48)),
+            'case_out' => $this->cleanNumericValue($this->getArrayValue($rowData, 49)),
+            'account' => $this->cleanValue($this->getArrayValue($rowData, 50)),
+            'account_name' => $this->cleanValue($this->getArrayValue($rowData, 51)),
+            'informant_member_id' => $this->cleanValue($this->getArrayValue($rowData, 52)),
+            'customer_member_id' => $this->cleanValue($this->getArrayValue($rowData, 53)),
+            'shift' => $this->cleanValue($this->getArrayValue($rowData, 54)),
+            'status_date' => $this->cleanValue($this->getArrayValue($rowData, 55)),
+            'sentiment_incoming' => $this->cleanNumericValue($this->getArrayValue($rowData, 56)),
+            'sentiment_outgoing' => $this->cleanNumericValue($this->getArrayValue($rowData, 57)),
+            'sentiment_all' => $this->cleanNumericValue($this->getArrayValue($rowData, 58)),
+            'sentiment_service' => $this->cleanNumericValue($this->getArrayValue($rowData, 59)),
+            'parent_id' => $this->cleanValue($this->getArrayValue($rowData, 60)),
+            'count_merged' => $this->cleanNumericValue($this->getArrayValue($rowData, 61)),
+            'source_id' => $this->cleanNumericValue($this->getArrayValue($rowData, 62)),
+            'source_name' => $this->cleanValue($this->getArrayValue($rowData, 63)),
+            'msisdn' => $this->cleanValue($this->getArrayValue($rowData, 64)),
+            'from_id' => $this->cleanValue($this->getArrayValue($rowData, 65)),
+            'from_username' => $this->cleanValue($this->getArrayValue($rowData, 66)),
+            'ticket_id_digipos' => $this->cleanValue($this->getArrayValue($rowData, 67)),
+            'ticket_customer_consent' => $this->cleanValue($this->getArrayValue($rowData, 68)),
+            'ticket_no_indi_home_alternatif' => $this->cleanValue($this->getArrayValue($rowData, 69)),
+            'sla_second' => $this->cleanValue($this->getArrayValue($rowData, 70)),
+            'informant_1' => $this->cleanValue($this->getArrayValue($rowData, 71)),
+            'informant_2' => $this->cleanValue($this->getArrayValue($rowData, 72)),
+            'customer_1' => $this->cleanValue($this->getArrayValue($rowData, 73)),
+            'customer_2' => $this->cleanValue($this->getArrayValue($rowData, 74)),
+            'ticket_no_k_t_p' => $this->cleanValue($this->getArrayValue($rowData, 75)),
+        ];
+
+        return $mappedData;
+    }
+
+    /**
+     * Safely get array value by index
+     */
+    private function getArrayValue($array, $index)
+    {
+        return isset($array[$index]) ? $array[$index] : null;
+    }
+
+    /**
+     * Enhanced clean value function to handle various data formats
+     */
+    private function cleanValue($value)
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        // Convert to string and trim
+        $cleaned = trim((string)$value);
+
+        // Handle specific values that should be null
+        if (in_array(strtolower($cleaned), ['-', 'null', "'null'", '\'null\'', 'undefined', "'undefined'"])) {
+            return null;
+        }
+
+        // Remove quotes from values like '38474540'
+        if (preg_match('/^\'(.*)\'$/', $cleaned, $matches)) {
+            $cleaned = $matches[1];
+        }
+
+        return $cleaned === '' ? null : $cleaned;
+    }
+
+    /**
+     * Enhanced numeric value cleaning
+     */
+    private function cleanNumericValue($value)
+    {
+        if (empty($value) || $value === '-' || $value === 'null') {
+            return null;
+        }
+
+        // Remove quotes
+        if (is_string($value) && preg_match('/^\'(.*)\'$/', $value, $matches)) {
+            $value = $matches[1];
+        }
+
+        // Handle comma as decimal separator (European format)
+        if (is_string($value)) {
+            $value = str_replace(',', '.', $value);
+        }
+
+        return is_numeric($value) ? (float)$value : null;
+    }
+
     public function template()
     {
         $filepath = FCPATH . 'assets/template/service_ticket_template.xlsx';
@@ -342,16 +600,13 @@ class ImportController extends BaseController
 }
 
 /**
- * Simple read filter class for memory optimization
+ * Updated read filter for more columns
  */
 class ReadFilter implements \PhpOffice\PhpSpreadsheet\Reader\IReadFilter
 {
     public function readCell(string $columnAddress, int $row, string $worksheetName = ''): bool
     {
-        // Only read columns A through J
-        if (in_array($columnAddress, ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'])) {
-            return true;
-        }
-        return false;
+        // Read all columns from A to CZ (covering up to 100+ columns)
+        return true; // Read all cells for maximum compatibility
     }
 }
