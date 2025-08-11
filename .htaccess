@@ -1,0 +1,36 @@
+Options -Indexes
+Options +FollowSymLinks
+
+# Disable server signature start
+
+ServerSignature Off
+
+# Disable server signature end
+
+RewriteEngine On
+
+# Handle Angular and Vue.js requests
+
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.\*)$ index.php/$1 [L]
+
+# PHP settings for large file uploads
+
+<IfModule mod_php8.c>
+    php_value upload_max_filesize 100M
+    php_value post_max_size 120M
+    php_value max_execution_time 300
+    php_value max_input_time 300
+    php_value memory_limit 512M
+    php_value max_file_uploads 20
+</IfModule>
+
+<IfModule mod_php7.c>
+    php_value upload_max_filesize 100M
+    php_value post_max_size 120M
+    php_value max_execution_time 300
+    php_value max_input_time 300
+    php_value memory_limit 512M
+    php_value max_file_uploads 20
+</IfModule>
