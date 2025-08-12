@@ -55,7 +55,8 @@ class Cookie extends BaseConfig
      * Cookie will only be set if a secure HTTPS connection exists.
      */
     // public bool $secure = false;
-    public bool $secure = true; // Enable only on HTTPS
+    // public bool $secure = true; // Enable only on HTTPS
+    public bool $secure = false;
 
     /**
      * --------------------------------------------------------------------------

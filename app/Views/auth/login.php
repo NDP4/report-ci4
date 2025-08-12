@@ -50,6 +50,27 @@
                                     <p class="mb-0">Masukkan username/email dan password untuk login</p>
                                 </div>
                                 <div class="card-body">
+                                    <?php if (session('lockout')): ?>
+                                        <div class="alert alert-danger text-white">
+                                            Terlalu banyak percobaan gagal. Silakan coba lagi dalam <span id="lockout-timer"></span> detik.
+                                        </div>
+                                        <script>
+                                            let seconds = <?= session('lockout') ?>;
+                                            const timerEl = document.getElementById('lockout-timer');
+
+                                            function updateTimer() {
+                                                if (seconds > 0) {
+                                                    timerEl.textContent = seconds;
+                                                    seconds--;
+                                                    setTimeout(updateTimer, 1000);
+                                                } else {
+                                                    timerEl.textContent = '0';
+                                                    location.reload();
+                                                }
+                                            }
+                                            updateTimer();
+                                        </script>
+                                    <?php endif; ?>
                                     <?php if (session()->getFlashdata('error')): ?>
                                         <div class="alert alert-danger text-white"><?= session()->getFlashdata('error') ?></div>
                                     <?php endif; ?>
