@@ -22,17 +22,18 @@ class CreateActivityLog extends Migration
                 'type'       => 'VARCHAR',
                 'constraint' => 100,
             ],
-            'description'=> [
+            'description' => [
                 'type'       => 'TEXT',
             ],
             'created_at' => [
-                'type'       => 'DATETIME',
-                'default'    => 'CURRENT_TIMESTAMP'
+                'type' => 'DATETIME',
+                'null' => true,
             ],
             'updated_at' => [
                 'type'       => 'DATETIME',
-                'default'    => 'CURRENT_TIMESTAMP',
-                'on_update'  => 'CURRENT_TIMESTAMP'
+                'null'      => true,
+                // 'default'    => 'CURRENT_TIMESTAMP',
+                // 'on_update'  => 'CURRENT_TIMESTAMP'
             ]
         ]);
         $this->forge->addKey('id', true);
