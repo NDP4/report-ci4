@@ -57,7 +57,7 @@ class AuthController extends BaseController
         // Cek lockout
         if ($cache->get($lockKey)) {
             $ttl = $cache->getMetadata($lockKey)['expire'] - time();
-            return redirect()->back()->withInput()->with('lockout',$ttl);
+            return redirect()->back()->withInput()->with('lockout', $ttl);
         }
 
         // Hitung percobaan login
@@ -90,7 +90,8 @@ class AuthController extends BaseController
             $logModel->insert([
                 'user_id' => null,
                 'action' => 'login_failed',
-                'description' => 'Login gagal untuk: ' . $login . ' | IP: ' . $ip
+                'description' => 'Login gagal untuk: ' . $login . ' | IP: ' . $ip,
+                'created_at' => date('Y-m-d H:i:s')
             ]);
             $attempts++;
             $cache->save($cacheKey, $attempts, $lockDuration);
@@ -108,7 +109,8 @@ class AuthController extends BaseController
             $logModel->insert([
                 'user_id' => $user['id'] ?? null,
                 'action' => 'login_failed',
-                'description' => 'Login gagal untuk: ' . $login . ' | IP: ' . $ip
+                'description' => 'Login gagal untuk: ' . $login . ' | IP: ' . $ip,
+                'created_at' => date('Y-m-d H:i:s')
             ]);
             $attempts++;
             $cache->save($cacheKey, $attempts, $lockDuration);
@@ -128,7 +130,8 @@ class AuthController extends BaseController
         $logModel->insert([
             'user_id' => $user['id'],
             'action' => 'login_success',
-            'description' => 'Login berhasil untuk: ' . $user['username'] . ' | IP: ' . $ip
+            'description' => 'Login berhasil untuk: ' . $user['username'] . ' | IP: ' . $ip,
+            'created_at' => date('Y-m-d H:i:s')
         ]);
 
         // Set session data
