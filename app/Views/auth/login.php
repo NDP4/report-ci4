@@ -51,13 +51,13 @@
                                 </div>
                                 <div class="card-body">
                                     <?php if (session()->getFlashdata('error')): ?>
-                                        <div class="alert alert-danger"><?= session()->getFlashdata('error') ?></div>
+                                        <div class="alert alert-danger text-white"><?= session()->getFlashdata('error') ?></div>
                                     <?php endif; ?>
                                     <?php if (session()->getFlashdata('success')): ?>
-                                        <div class="alert alert-success"><?= session()->getFlashdata('success') ?></div>
+                                        <div class="alert alert-success text-white"><?= session()->getFlashdata('success') ?></div>
                                     <?php endif; ?>
                                     <?php if (session()->getFlashdata('errors')): ?>
-                                        <div class="alert alert-danger">
+                                        <div class="alert alert-danger text-white">
                                             <?php foreach (session()->getFlashdata('errors') as $error): ?>
                                                 <p><?= $error ?></p>
                                             <?php endforeach; ?>
@@ -98,8 +98,8 @@
                             <div class="position-relative bg-gradient-primary h-100 m-3 px-7 border-radius-lg d-flex flex-column justify-content-center overflow-hidden"
                                 style="background-image: url('<?= base_url('assets/img/bginter.jpg') ?>'); background-size: cover;">
                                 <span class="mask bg-gradient-primary opacity-2"></span>
-                                <h4 class="mt-5 text-white font-weight-bolder position-relative">"Attention is the new currency"</h4>
-                                <p class="text-white position-relative">The more effortless the writing looks, the more effort the writer actually put into the process.
+                                <h4 class="mt-5 text-white font-weight-bolder position-relative">"Your Digital CX Partner"</h4>
+                                <p class="text-white position-relative">to become a major provider in the information services industry in the regional area.
                                 </p>
                             </div>
                         </div>

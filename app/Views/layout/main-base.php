@@ -48,6 +48,13 @@
         .btn-dark {
             background-color: #c5040c !important;
         }
+
+        /* DataTables pagination active color */
+        .dataTables_wrapper .pagination .page-item.active .page-link {
+            background-color: #c5040c !important;
+            border-color: #c5040c !important;
+            color: #fff !important;
+        }
     </style>
 </head>
 
