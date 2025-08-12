@@ -6,8 +6,8 @@ use CodeIgniter\Router\RouteCollection;
  * @var RouteCollection $routes
  */
 
-// Default route redirect to login
-$routes->get('/', 'AuthController::login');
+// Default route redirect to dashboard
+$routes->get('/', 'TicketController::index');
 
 // Auth routes
 $routes->group('', [], static function ($routes) {
@@ -21,8 +21,24 @@ $routes->get('import', 'ImportController::index');
 $routes->post('import/upload', 'ImportController::upload');
 $routes->get('import/template', 'ImportController::template');
 
+
 // Dashboard routes (protected)
 $routes->group('dashboard', [], static function ($routes) {
-    $routes->get('/', 'DashboardController::index');
-    $routes->get('about', 'DashboardController::about');
+    $routes->get('/', 'TicketController::index');
+    $routes->post('getDataTables', 'TicketController::getDataTables');
+    $routes->get('detail/(:segment)', 'TicketController::detail/$1');
+    $routes->get('export', 'TicketController::export');
+    $routes->get('about', 'TicketController::about');
+    $routes->get('ticket', 'TicketController::ticket');
+    $routes->get('getChartData', 'TicketController::getChartData');
+
+    $routes->get('import', 'ImportController::index');
+
+    // User Management
+    $routes->get('user', 'Dashboard\User::index');
+    $routes->get('user/create', 'Dashboard\User::create');
+    $routes->post('user/store', 'Dashboard\User::store');
+    $routes->get('user/edit/(:num)', 'Dashboard\User::edit/$1');
+    $routes->post('user/update/(:num)', 'Dashboard\User::update/$1');
+    $routes->post('user/delete/(:num)', 'Dashboard\User::delete/$1');
 });

@@ -27,13 +27,19 @@ class ImportController extends BaseController
         $memoryLimit = ini_get('memory_limit');
 
         $data = [
+            'title' => 'Import Data Ticket',
+            'breadcrumb' => [
+                'Ticket' => 'ticket',
+                'Import Data Ticket' => 'import'
+            ],
             'uploadMaxSize' => $uploadMaxSize,
             'postMaxSize' => $postMaxSize,
             'memoryLimit' => $memoryLimit,
             'postMaxSizeBytes' => $this->parseSize($postMaxSize) // Add parsed size in bytes
         ];
 
-        return view('import/index', $data);
+        // return view('import/index', $data);
+        return view('pages/import', $data);
     }
 
     public function upload()

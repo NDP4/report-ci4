@@ -12,44 +12,45 @@ class UserModel extends Model
     protected $returnType       = 'array';
     protected $useSoftDeletes   = false;
     protected $protectFields    = true;
-    protected $allowedFields    = ['username', 'email', 'password', 'role'];
-
-    protected bool $allowEmptyInserts = false;
-    protected bool $updateOnlyChanged = true;
-
-    protected array $casts = [];
-    protected array $castHandlers = [];
+    protected $allowedFields    = [
+        'username',
+        'email',
+        'password',
+        'role',
+        'created_at',
+        'updated_at'
+    ];
 
     // Dates
-    protected $useTimestamps = true;
+    protected $useTimestamps = false;
     protected $dateFormat    = 'datetime';
     protected $createdField  = 'created_at';
     protected $updatedField  = 'updated_at';
+    protected $deletedField  = 'deleted_at';
 
     // Validation
-    protected $validationRules      = [
-        'username' => 'required|min_length[3]|max_length[100]|is_unique[users.username,id,{id}]',
-        'email'    => 'required|valid_email|is_unique[users.email,id,{id}]',
-        'password' => 'required|min_length[6]',
-        'role'     => 'required|in_list[admin,viewer]'
-    ];
+    protected $validationRules      = [];
     protected $validationMessages   = [];
     protected $skipValidation       = false;
     protected $cleanValidationRules = true;
 
     // Callbacks
     protected $allowCallbacks = true;
-    protected $beforeInsert   = ['hashPassword'];
-    protected $beforeUpdate   = ['hashPassword'];
+    protected $beforeInsert   = [];
+    protected $afterInsert    = [];
+    protected $beforeUpdate   = [];
+    protected $afterUpdate    = [];
+    protected $beforeFind     = [];
+    protected $afterFind      = [];
+    protected $beforeDelete   = [];
+    protected $afterDelete    = [];
 
-    protected function hashPassword(array $data)
-    {
-        if (isset($data['data']['password'])) {
-            $data['data']['password'] = password_hash($data['data']['password'], PASSWORD_DEFAULT);
-        }
-        return $data;
-    }
-
+    /**
+     * Find user by email or username
+     *
+     * @param string $login
+     * @return array|null
+     */
     public function findUserByEmailOrUsername($login)
     {
         return $this->where('email', $login)
