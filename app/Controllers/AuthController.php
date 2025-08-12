@@ -37,9 +37,12 @@ class AuthController extends BaseController
             return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
         }
 
-        $login = $this->request->getPost('login');
-        $password = $this->request->getPost('password');
+        $login = $this->request->getPost('login' , FILTER_SANITIZE_STRING);
+        $password = $this->request->getPost('password' , FILTER_SANITIZE_STRING);
 
+        if (empty($login) || empty($password) || strlen($login) > 100 || strlen($password) > 100) {
+            return redirect()->back()->withInput()->with('error', 'Login or password is invalid');
+        }
         $user = $this->userModel->findUserByEmailOrUsername($login);
 
         if (!$user || !password_verify($password, $user['password'])) {

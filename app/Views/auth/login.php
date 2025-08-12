@@ -68,12 +68,12 @@
                                         <div class="mb-3">
                                             <label for="login" class="form-label">Username or Email</label>
                                             <input type="text" class="form-control form-control-lg" id="login" name="login"
-                                                value="<?= old('login') ?>" required>
+                                                value="<?= esc(old('login')) ?>" required maxlength="100" autocomplete="username">
                                         </div>
                                         <div class="mb-3">
                                             <label for="password" class="form-label">Password</label>
                                             <input type="password" class="form-control form-control-lg" id="password"
-                                                name="password" required>
+                                                name="password" required maxlength="100" autocomplete="current-password">
                                         </div>
                                         <div class="form-check form-switch mb-3">
                                             <input class="form-check-input" type="checkbox" id="rememberMe" name="remember">
