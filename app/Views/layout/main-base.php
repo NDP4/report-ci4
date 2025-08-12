@@ -55,6 +55,9 @@
             border-color: #c5040c !important;
             color: #fff !important;
         }
+        .text-primary {
+            color: #c5040c !important;
+        }
     </style>
 </head>
 

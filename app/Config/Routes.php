@@ -23,7 +23,6 @@ $routes->group('', ['filter' => 'admin'], static function ($routes) {
     $routes->get('import/template', 'ImportController::template');
 });
 
-
 // Dashboard routes (protected)
 $routes->group('dashboard', ['filter' => 'auth'], static function ($routes) {
     $routes->get('/', 'TicketController::index');
@@ -48,4 +47,7 @@ $routes->group('dashboard', ['filter' => 'auth'], static function ($routes) {
         $routes->post('user/update/(:num)', 'Dashboard\User::update/$1');
         $routes->post('user/delete/(:num)', 'Dashboard\User::delete/$1');
     });
+
+    // Help routes
+    $routes->get('help/documentation', 'HelpController::documentation');
 });
