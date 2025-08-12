@@ -21,6 +21,12 @@ class ImportController extends BaseController
 
     public function index()
     {
+        // Check if user is admin
+        $redirect = $this->requireAdmin();
+        if ($redirect) {
+            return $redirect;
+        }
+
         // Get server limits for display
         $uploadMaxSize = ini_get('upload_max_filesize');
         $postMaxSize = ini_get('post_max_size');
@@ -44,6 +50,12 @@ class ImportController extends BaseController
 
     public function upload()
     {
+        // Check if user is admin
+        $redirect = $this->requireAdmin();
+        if ($redirect) {
+            return $redirect;
+        }
+
         // Early check for file size issues before any processing
         $contentLength = $_SERVER['CONTENT_LENGTH'] ?? 0;
         $postMaxSize = $this->parseSize(ini_get('post_max_size'));
@@ -595,6 +607,12 @@ class ImportController extends BaseController
 
     public function template()
     {
+        // Check if user is admin
+        $redirect = $this->requireAdmin();
+        if ($redirect) {
+            return $redirect;
+        }
+
         $filepath = FCPATH . 'assets/template/service_ticket_template.xlsx';
 
         if (file_exists($filepath)) {

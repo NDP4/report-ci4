@@ -63,7 +63,7 @@
                                     <select class="form-control" id="role" name="role" required>
                                         <option value="">Select Role</option>
                                         <option value="admin" <?= old('role', $user['role']) === 'admin' ? 'selected' : '' ?>>Admin</option>
-                                        <option value="user" <?= old('role', $user['role']) === 'user' ? 'selected' : '' ?>>User</option>
+                                        <option value="user" <?= old('role', $user['role']) === 'viewer' ? 'selected' : '' ?>>Viewer</option>
                                     </select>
                                 </div>
                             </div>

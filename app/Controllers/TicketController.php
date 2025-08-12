@@ -22,6 +22,12 @@ class TicketController extends BaseController
 
     public function index()
     {
+        // Check if user is logged in
+        $redirect = $this->requireAuth();
+        if ($redirect) {
+            return $redirect;
+        }
+
         // Get basic statistics
         $totalRecords = $this->serviceTicketModel->countAll();
         $totalClosed = $this->serviceTicketModel->where('ticket_status_name', 'CLOSED')->countAllResults();
@@ -67,6 +73,12 @@ class TicketController extends BaseController
 
     public function ticket()
     {
+        // Check if user is logged in
+        $redirect = $this->requireAuth();
+        if ($redirect) {
+            return $redirect;
+        }
+
         // Get basic statistics
         $totalRecords = $this->serviceTicketModel->countAll();
         $totalClosed = $this->serviceTicketModel->where('ticket_status_name', 'CLOSED')->countAllResults();
@@ -91,6 +103,12 @@ class TicketController extends BaseController
      */
     public function getDataTables()
     {
+        // Check if user is logged in
+        $redirect = $this->requireAuth();
+        if ($redirect) {
+            return $redirect;
+        }
+
         $request = $this->request;
 
         // DataTables parameters
@@ -183,6 +201,12 @@ class TicketController extends BaseController
      */
     public function detail($ticketId)
     {
+        // Check if user is logged in
+        $redirect = $this->requireAuth();
+        if ($redirect) {
+            return $redirect;
+        }
+
         $ticket = $this->serviceTicketModel->find($ticketId);
 
         if (!$ticket) {
@@ -201,6 +225,12 @@ class TicketController extends BaseController
      */
     public function export()
     {
+        // Check if user is logged in
+        $redirect = $this->requireAuth();
+        if ($redirect) {
+            return $redirect;
+        }
+
         // Set memory limit for large exports
         ini_set('memory_limit', '1024M');
         ini_set('max_execution_time', 300);
@@ -353,6 +383,12 @@ class TicketController extends BaseController
      */
     public function getChartData()
     {
+        // Check if user is logged in
+        $redirect = $this->requireAuth();
+        if ($redirect) {
+            return $redirect;
+        }
+
         $request = $this->request;
 
         // Get filters from request

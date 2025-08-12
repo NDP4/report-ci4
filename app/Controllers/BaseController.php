@@ -55,4 +55,33 @@ abstract class BaseController extends Controller
 
         // E.g.: $this->session = service('session');
     }
+
+    /**
+     * Check if current user has admin role
+     * Redirect to dashboard if not admin
+     */
+    protected function requireAdmin()
+    {
+        if (!session()->has('user_id')) {
+            return redirect()->to('/login')->with('error', 'Please login first');
+        }
+
+        if (session()->get('role') !== 'admin') {
+            return redirect()->to('/dashboard')->with('error', 'Access denied. Admin role required.');
+        }
+
+        return null;
+    }
+
+    /**
+     * Check if user is logged in
+     */
+    protected function requireAuth()
+    {
+        if (!session()->has('user_id')) {
+            return redirect()->to('/login')->with('error', 'Please login first');
+        }
+
+        return null;
+    }
 }

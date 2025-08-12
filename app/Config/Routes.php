@@ -16,14 +16,16 @@ $routes->group('', [], static function ($routes) {
     $routes->get('auth/logout', 'AuthController::logout');
 });
 
-// Import routes
-$routes->get('import', 'ImportController::index');
-$routes->post('import/upload', 'ImportController::upload');
-$routes->get('import/template', 'ImportController::template');
+// Import routes (admin only)
+$routes->group('', ['filter' => 'admin'], static function ($routes) {
+    $routes->get('import', 'ImportController::index');
+    $routes->post('import/upload', 'ImportController::upload');
+    $routes->get('import/template', 'ImportController::template');
+});
 
 
 // Dashboard routes (protected)
-$routes->group('dashboard', [], static function ($routes) {
+$routes->group('dashboard', ['filter' => 'auth'], static function ($routes) {
     $routes->get('/', 'TicketController::index');
     $routes->post('getDataTables', 'TicketController::getDataTables');
     $routes->get('detail/(:segment)', 'TicketController::detail/$1');
@@ -32,13 +34,18 @@ $routes->group('dashboard', [], static function ($routes) {
     $routes->get('ticket', 'TicketController::ticket');
     $routes->get('getChartData', 'TicketController::getChartData');
 
-    $routes->get('import', 'ImportController::index');
+    // Import routes (admin only within dashboard)
+    $routes->group('', ['filter' => 'admin'], static function ($routes) {
+        $routes->get('import', 'ImportController::index');
+    });
 
-    // User Management
-    $routes->get('user', 'Dashboard\User::index');
-    $routes->get('user/create', 'Dashboard\User::create');
-    $routes->post('user/store', 'Dashboard\User::store');
-    $routes->get('user/edit/(:num)', 'Dashboard\User::edit/$1');
-    $routes->post('user/update/(:num)', 'Dashboard\User::update/$1');
-    $routes->post('user/delete/(:num)', 'Dashboard\User::delete/$1');
+    // User Management (admin only)
+    $routes->group('', ['filter' => 'admin'], static function ($routes) {
+        $routes->get('user', 'Dashboard\User::index');
+        $routes->get('user/create', 'Dashboard\User::create');
+        $routes->post('user/store', 'Dashboard\User::store');
+        $routes->get('user/edit/(:num)', 'Dashboard\User::edit/$1');
+        $routes->post('user/update/(:num)', 'Dashboard\User::update/$1');
+        $routes->post('user/delete/(:num)', 'Dashboard\User::delete/$1');
+    });
 });

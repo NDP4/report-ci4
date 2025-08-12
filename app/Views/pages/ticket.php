@@ -67,7 +67,10 @@
         <div class="card-header d-flex justify-content-between align-items-center">
             <h5 class="mb-0"><i class="fas fa-table me-2"></i>Service Tickets Data</h5>
             <div>
-                <a class=" btn btn-primary btn-sm" href="<?= base_url('dashboard/import') ?>"><i class="fas fa-upload me-1"></i>Import Data</a>
+                <!-- import ticket hanya untuk admin -->
+                <?php if (session()->get('role') === 'admin'): ?>
+                    <a class=" btn btn-primary btn-sm" href="<?= base_url('dashboard/import') ?>"><i class="fas fa-upload me-1"></i>Import Data</a>
+                <?php endif; ?>
                 <button type="button" class="btn btn-success btn-sm" id="exportBtn">
                     <i class="fas fa-download me-1"></i>Export Excel
                 </button>

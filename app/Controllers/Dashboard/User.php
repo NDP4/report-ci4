@@ -16,6 +16,12 @@ class User extends BaseController
 
     public function index()
     {
+        // Check if user is admin
+        $redirect = $this->requireAdmin();
+        if ($redirect) {
+            return $redirect;
+        }
+
         $data = [
             'title' => 'Management User',
             'users' => $this->userModel->findAll()
@@ -26,6 +32,12 @@ class User extends BaseController
 
     public function create()
     {
+        // Check if user is admin
+        $redirect = $this->requireAdmin();
+        if ($redirect) {
+            return $redirect;
+        }
+
         $data = [
             'title' => 'Add New User'
         ];
@@ -35,6 +47,12 @@ class User extends BaseController
 
     public function store()
     {
+        // Check if user is admin
+        $redirect = $this->requireAdmin();
+        if ($redirect) {
+            return $redirect;
+        }
+
         $validation = \Config\Services::validation();
 
         $rules = [
@@ -65,6 +83,12 @@ class User extends BaseController
 
     public function edit($id)
     {
+        // Check if user is admin
+        $redirect = $this->requireAdmin();
+        if ($redirect) {
+            return $redirect;
+        }
+
         $user = $this->userModel->find($id);
 
         if (!$user) {
@@ -81,6 +105,12 @@ class User extends BaseController
 
     public function update($id)
     {
+        // Check if user is admin
+        $redirect = $this->requireAdmin();
+        if ($redirect) {
+            return $redirect;
+        }
+
         $user = $this->userModel->find($id);
 
         if (!$user) {
@@ -125,6 +155,12 @@ class User extends BaseController
 
     public function delete($id)
     {
+        // Check if user is admin
+        $redirect = $this->requireAdmin();
+        if ($redirect) {
+            return $redirect;
+        }
+
         $user = $this->userModel->find($id);
 
         if (!$user) {
