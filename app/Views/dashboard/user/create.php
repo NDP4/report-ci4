@@ -61,7 +61,7 @@
                                     <select class="form-control" id="role" name="role" required>
                                         <option value="">Select Role</option>
                                         <option value="admin" <?= old('role') === 'admin' ? 'selected' : '' ?>>Admin</option>
-                                        <option value="user" <?= old('role') === 'user' ? 'selected' : '' ?>>User</option>
+                                        <option value="viewer" <?= old('role') === 'viewer' ? 'selected' : '' ?>>Viewer</option>
                                     </select>
                                 </div>
                             </div>
