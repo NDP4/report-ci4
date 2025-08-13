@@ -82,6 +82,7 @@
         <div class="card-body">
             <div class="table-responsive">
                 <table id="ticketsTable" class="table table-striped table-hover w-100">
+                    <!-- <table id="ticketsTable" class="table table-striped table-bordered"> -->
                     <thead class="table-light">
                         <tr>
                             <th>Ticket ID</th>
@@ -100,6 +101,7 @@
                     </thead>
                     <tbody>
                         <!-- Data will be loaded via AJAX -->
+                        -->
                     </tbody>
                 </table>
             </div>
@@ -120,6 +122,156 @@
         </div>
     </div>
 </div>
+
+<!-- jQuery -->
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+
+<!-- Bootstrap 5 JS -->
+<script src="<?php echo base_url('assets/js/bootstrap.bundle.min.js'); ?>"></script>
+
+
+
+<!-- DataTables JS -->
+<script type="text/javascript" src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.bootstrap5.min.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap5.min.js"></script>
+
+<script>
+    $(document).ready(function() {
+        // Initialize DataTable
+        var table = $('#ticketsTable').DataTable({
+            processing: true,
+            serverSide: true,
+            responsive: true,
+            ajax: {
+                url: '<?= base_url('dashboard/getDataTables') ?>',
+                type: 'POST',
+                data: function(d) {
+                    d.searchable_columns = ['ticket_id', 'subject', 'customer_name', 'ticket_status_name', 'priority_name',
+                        'witel', 'main_category', 'category', 'date_created', 'date_close', 'created_by_name'
+                    ];
+                    // d.search_value = d.search.value;
+                    return d;
+                },
+                error: function(xhr, error, thrown) {
+                    console.log('Ajax error:', error);
+                    alert('Error loading data. Please try again.');
+                }
+            },
+            columns: [{
+                    data: 'ticket_id',
+                    name: 'ticket_id',
+                    searchable: true
+                },
+                {
+                    data: 'subject',
+                    name: 'subject',
+                    searchable: true
+                },
+                {
+                    data: 'customer_name',
+                    name: 'customer_name',
+                    searchable: true
+                },
+                {
+                    data: 'ticket_status_name',
+                    name: 'ticket_status_name',
+                    orderable: false,
+                    searchable: true
+                },
+                {
+                    data: 'priority_name',
+                    name: 'priority_name',
+                    orderable: false,
+                    searchable: true
+                },
+                {
+                    data: 'witel',
+                    name: 'witel',
+                    searchable: true
+                },
+                {
+                    data: 'main_category',
+                    name: 'main_category',
+                    searchable: true
+                },
+                {
+                    data: 'category',
+                    name: 'category',
+                    searchable: true
+                },
+                {
+                    data: 'date_created',
+                    name: 'date_created',
+                    searchable: true
+                },
+                {
+                    data: 'date_close',
+                    name: 'date_close',
+                    searchable: true
+                },
+                {
+                    data: 'created_by_name',
+                    name: 'created_by_name',
+                    searchable: true
+                },
+                {
+                    data: 'actions',
+                    name: 'actions',
+                    orderable: false,
+                    searchable: false
+                }
+            ],
+            order: [
+                [0, 'asc']
+            ],
+            pageLength: 10,
+            lengthMenu: [
+                [10, 25, 50, 100, -1],
+                [10, 25, 50, 100, "All"]
+            ],
+            language: {
+                processing: '<div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>',
+                emptyTable: "No data available",
+                info: "Showing _START_ to _END_ of _TOTAL_ entries",
+                infoEmpty: "Showing 0 to 0 of 0 entries",
+                infoFiltered: "(filtered from _MAX_ total entries)",
+                lengthMenu: "Show _MENU_ entries",
+                search: "Search:",
+                zeroRecords: "No matching records found"
+            },
+            dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>' +
+                '<"row"<"col-sm-12"tr>>' +
+                '<"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>'
+        });
+
+        // Export functionality
+        $('#exportBtn').on('click', function() {
+            var searchValue = table.search();
+            $('#loadingModal').modal('show');
+
+            window.location.href = '<?= base_url('dashboard/export') ?>?search=' + encodeURIComponent(searchValue);
+
+            setTimeout(function() {
+                $('#loadingModal').modal('hide');
+            }, 3000);
+        });
+
+        // Auto refresh every 5 minutes
+        setInterval(function() {
+            table.ajax.reload(null, false);
+        }, 300000);
+
+        // Enhanced search functionality
+        $('.dataTables_filter input').unbind().bind('keyup', function() {
+            var searchValue = $(this).val();
+            table.search(searchValue).draw();
+        });
+    });
+</script>
 
 
 <?= $this->endSection(); ?>

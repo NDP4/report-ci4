@@ -84,6 +84,9 @@ class TicketController extends BaseController
         $totalClosed = $this->serviceTicketModel->where('ticket_status_name', 'CLOSED')->countAllResults();
         $totalOpen = $this->serviceTicketModel->where('ticket_status_name !=', 'CLOSED')->countAllResults();
 
+        // get all tickets data
+        $tickets = $this->serviceTicketModel->findAll();
+
         $data = [
             'title' => 'Service Tickets',
             'breadcrumb' => [
@@ -92,7 +95,8 @@ class TicketController extends BaseController
             ],
             'totalRecords' => $totalRecords,
             'totalClosed' => $totalClosed,
-            'totalOpen' => $totalOpen
+            'totalOpen' => $totalOpen,
+            'tickets' => $tickets
         ];
 
         return view('pages/ticket', $data);
