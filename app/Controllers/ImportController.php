@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Models\ServiceTicketModel;
+use App\Models\ActivityLogModel; // Tambahkan model log
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Reader\Xlsx;
 use PhpOffice\PhpSpreadsheet\Reader\Xls;
@@ -12,11 +13,13 @@ use CodeIgniter\HTTP\ResponseInterface;
 class ImportController extends BaseController
 {
     protected $serviceTicketModel;
+    protected $activityLogModel; // Property log
     private $batchSize = 500; // Reduce batch size to prevent memory issues
 
     public function __construct()
     {
         $this->serviceTicketModel = new ServiceTicketModel();
+        $this->activityLogModel = new ActivityLogModel(); // Inisialisasi log
     }
 
     public function index()
@@ -95,6 +98,7 @@ class ImportController extends BaseController
 
         if ($file->isValid() && !$file->hasMoved()) {
             if ($file->getSize() > 104857600) {
+                $this->logActivity('Import Service Ticket', 'File terlalu besar. Maksimal 100MB', 'error');
                 return redirect()->to('/import')->with('error', 'File terlalu besar. Maksimal 100MB');
             }
 
@@ -108,18 +112,32 @@ class ImportController extends BaseController
                 unlink($filePath);
 
                 if ($totalRecords > 0) {
+                    $session = session();
+                    $username = $session->get('username') ?? 'System';
+                    $ip = $this->request->getIPAddress();
+                    $waktu = date('Y-m-d H:i:s');
+                    $deskripsi = "Berhasil import {$totalRecords} records dari file {$fileName} pada {$waktu} oleh {$username} (IP: {$ip})";
+                    $this->logActivity('Import Service Ticket', $deskripsi, 'success', 'import');
                     return redirect()->to('/import')->with('success', "Data berhasil diimport. Total: {$totalRecords} records");
                 } else {
+                    $session = session();
+                    $username = $session->get('username') ?? 'System';
+                    $ip = $this->request->getIPAddress();
+                    $waktu = date('Y-m-d H:i:s');
+                    $deskripsi = "File kosong atau format tidak sesuai dari file {$fileName} pada {$waktu} oleh {$username} (IP: {$ip})";
+                    $this->logActivity('Import Service Ticket', $deskripsi, 'error', 'import');
                     return redirect()->to('/import')->with('error', 'File kosong atau format tidak sesuai');
                 }
             } catch (\Exception $e) {
                 if (file_exists($filePath)) {
                     unlink($filePath);
                 }
+                $this->logActivity('Import Service Ticket', 'Error: ' . $e->getMessage(), 'error');
                 return redirect()->to('/import')->with('error', 'Error: ' . $e->getMessage());
             }
         }
 
+        $this->logActivity('Import Service Ticket', 'File upload gagal', 'error');
         return redirect()->to('/import')->with('error', 'File upload gagal');
     }
 
@@ -620,6 +638,28 @@ class ImportController extends BaseController
         }
 
         return redirect()->to('/import')->with('error', 'Template file tidak ditemukan');
+    }
+
+    /**
+     * Fungsi untuk mencatat activity log
+     */
+    private function logActivity($activity, $description, $status, $action = null)
+    {
+        $session = session();
+        $userId = $session->get('user_id') ?? 0;
+        $username = $session->get('username') ?? 'System';
+        $data = [
+            'user_id' => $userId,
+            'username' => $username,
+            'activity' => $activity,
+            'description' => $description,
+            'status' => $status,
+            'action' => $action,
+            'ip_address' => $this->request->getIPAddress(),
+            'user_agent' => $this->request->getUserAgent()->getAgentString(),
+            'created_at' => date('Y-m-d H:i:s')
+        ];
+        $this->activityLogModel->insert($data);
     }
 }
 

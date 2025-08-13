@@ -55,6 +55,7 @@
             border-color: #c5040c !important;
             color: #fff !important;
         }
+
         .text-primary {
             color: #c5040c !important;
         }
@@ -579,87 +580,90 @@
     <script src="<?php echo base_url('assets/js/plugins/smooth-scrollbar.min.js'); ?>"></script>
     <script src="<?php echo base_url('assets/js/plugins/chartjs.min.js'); ?>"></script>
     <script>
-        var ctx1 = document.getElementById("chart-line").getContext("2d");
+        var chartLineEl = document.getElementById("chart-line");
+        if (chartLineEl) {
+            var ctx1 = chartLineEl.getContext("2d");
 
-        var gradientStroke1 = ctx1.createLinearGradient(0, 230, 0, 50);
+            var gradientStroke1 = ctx1.createLinearGradient(0, 230, 0, 50);
 
-        gradientStroke1.addColorStop(1, 'rgba(94, 114, 228, 0.2)');
-        gradientStroke1.addColorStop(0.2, 'rgba(94, 114, 228, 0.0)');
-        gradientStroke1.addColorStop(0, 'rgba(94, 114, 228, 0)');
-        new Chart(ctx1, {
-            type: "line",
-            data: {
-                labels: ["Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
-                datasets: [{
-                    label: "Mobile apps",
-                    tension: 0.4,
-                    borderWidth: 0,
-                    pointRadius: 0,
-                    borderColor: "#5e72e4",
-                    backgroundColor: gradientStroke1,
-                    borderWidth: 3,
-                    fill: true,
-                    data: [50, 40, 300, 220, 500, 250, 400, 230, 500],
-                    maxBarThickness: 6
+            gradientStroke1.addColorStop(1, 'rgba(94, 114, 228, 0.2)');
+            gradientStroke1.addColorStop(0.2, 'rgba(94, 114, 228, 0.0)');
+            gradientStroke1.addColorStop(0, 'rgba(94, 114, 228, 0)');
+            new Chart(ctx1, {
+                type: "line",
+                data: {
+                    labels: ["Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+                    datasets: [{
+                        label: "Mobile apps",
+                        tension: 0.4,
+                        borderWidth: 0,
+                        pointRadius: 0,
+                        borderColor: "#5e72e4",
+                        backgroundColor: gradientStroke1,
+                        borderWidth: 3,
+                        fill: true,
+                        data: [50, 40, 300, 220, 500, 250, 400, 230, 500],
+                        maxBarThickness: 6
 
-                }],
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        display: false,
-                    }
+                    }],
                 },
-                interaction: {
-                    intersect: false,
-                    mode: 'index',
-                },
-                scales: {
-                    y: {
-                        grid: {
-                            drawBorder: false,
-                            display: true,
-                            drawOnChartArea: true,
-                            drawTicks: false,
-                            borderDash: [5, 5]
-                        },
-                        ticks: {
-                            display: true,
-                            padding: 10,
-                            color: '#fbfbfb',
-                            font: {
-                                size: 11,
-                                family: "Open Sans",
-                                style: 'normal',
-                                lineHeight: 2
-                            },
-                        }
-                    },
-                    x: {
-                        grid: {
-                            drawBorder: false,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
                             display: false,
-                            drawOnChartArea: false,
-                            drawTicks: false,
-                            borderDash: [5, 5]
-                        },
-                        ticks: {
-                            display: true,
-                            color: '#ccc',
-                            padding: 20,
-                            font: {
-                                size: 11,
-                                family: "Open Sans",
-                                style: 'normal',
-                                lineHeight: 2
-                            },
                         }
                     },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index',
+                    },
+                    scales: {
+                        y: {
+                            grid: {
+                                drawBorder: false,
+                                display: true,
+                                drawOnChartArea: true,
+                                drawTicks: false,
+                                borderDash: [5, 5]
+                            },
+                            ticks: {
+                                display: true,
+                                padding: 10,
+                                color: '#fbfbfb',
+                                font: {
+                                    size: 11,
+                                    family: "Open Sans",
+                                    style: 'normal',
+                                    lineHeight: 2
+                                },
+                            }
+                        },
+                        x: {
+                            grid: {
+                                drawBorder: false,
+                                display: false,
+                                drawOnChartArea: false,
+                                drawTicks: false,
+                                borderDash: [5, 5]
+                            },
+                            ticks: {
+                                display: true,
+                                color: '#ccc',
+                                padding: 20,
+                                font: {
+                                    size: 11,
+                                    family: "Open Sans",
+                                    style: 'normal',
+                                    lineHeight: 2
+                                },
+                            }
+                        },
+                    },
                 },
-            },
-        });
+            });
+        }
     </script>
     <script>
         var win = navigator.platform.indexOf('Win') > -1;
@@ -701,6 +705,13 @@
                 ajax: {
                     url: '<?= base_url('dashboard/getDataTables') ?>',
                     type: 'POST',
+                    data: function(d) {
+                        d.searchable_columns = ['ticket_id', 'subject', 'customer_name', 'ticket_status_name', 'priority_name',
+                            'witel', 'main_category', 'category', 'date_created', 'date_close', 'created_by_name'
+                        ];
+                        d.search_value = d.search.value;
+                        return d;
+                    },
                     error: function(xhr, error, thrown) {
                         console.log('Ajax error:', error);
                         alert('Error loading data. Please try again.');
@@ -708,49 +719,60 @@
                 },
                 columns: [{
                         data: 'ticket_id',
-                        name: 'ticket_id'
+                        name: 'ticket_id',
+                        searchable: true
                     },
                     {
                         data: 'subject',
-                        name: 'subject'
+                        name: 'subject',
+                        searchable: true
                     },
                     {
                         data: 'customer_name',
-                        name: 'customer_name'
+                        name: 'customer_name',
+                        searchable: true
                     },
                     {
                         data: 'ticket_status_name',
                         name: 'ticket_status_name',
-                        orderable: false
+                        orderable: false,
+                        searchable: true
                     },
                     {
                         data: 'priority_name',
                         name: 'priority_name',
-                        orderable: false
+                        orderable: false,
+                        searchable: true
                     },
                     {
                         data: 'witel',
-                        name: 'witel'
+                        name: 'witel',
+                        searchable: true
                     },
                     {
                         data: 'main_category',
-                        name: 'main_category'
+                        name: 'main_category',
+                        searchable: true
                     },
                     {
                         data: 'category',
-                        name: 'category'
+                        name: 'category',
+                        searchable: true
                     },
                     {
                         data: 'date_created',
-                        name: 'date_created'
+                        name: 'date_created',
+                        searchable: true
                     },
                     {
                         data: 'date_close',
-                        name: 'date_close'
+                        name: 'date_close',
+                        searchable: true
                     },
                     {
                         data: 'created_by_name',
-                        name: 'created_by_name'
+                        name: 'created_by_name',
+                        searchable: true
                     },
                     {
                         data: 'actions',
@@ -798,6 +820,12 @@
             setInterval(function() {
                 table.ajax.reload(null, false);
             }, 300000);
+
+            // Enhanced search functionality
+            $('.dataTables_filter input').unbind().bind('keyup', function() {
+                var searchValue = $(this).val();
+                table.search(searchValue).draw();
+            });
         });
     </script>
 
@@ -805,38 +833,45 @@
         // Get server POST max size from PHP
         const postMaxSize = <?= json_encode($postMaxSizeBytes ?? 8388608) ?>;
 
-        document.getElementById('uploadForm').addEventListener('submit', function(e) {
-            const fileInput = document.getElementById('file');
-            const progressContainer = document.getElementById('progressContainer');
-            const uploadBtn = document.getElementById('uploadBtn');
+        var uploadForm = document.getElementById('uploadForm');
+        if (uploadForm) {
+            uploadForm.addEventListener('submit', function(e) {
+                const fileInput = document.getElementById('file');
+                const progressContainer = document.getElementById('progressContainer');
+                const uploadBtn = document.getElementById('uploadBtn');
 
-            if (fileInput.files.length > 0) {
-                const fileSize = fileInput.files[0].size;
+                if (fileInput && fileInput.files.length > 0) {
+                    const fileSize = fileInput.files[0].size;
 
-                if (fileSize > postMaxSize) {
-                    e.preventDefault();
-                    alert('File terlalu besar. Maksimal ukuran file adalah ' + formatBytes(postMaxSize));
-                    return false;
+                    if (fileSize > postMaxSize) {
+                        e.preventDefault();
+                        alert('File terlalu besar. Maksimal ukuran file adalah ' + formatBytes(postMaxSize));
+                        return false;
+                    }
+
+                    // Show progress and disable button
+                    if (progressContainer) progressContainer.style.display = 'block';
+                    if (uploadBtn) {
+                        uploadBtn.disabled = true;
+                        uploadBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...';
+                    }
                 }
+            });
+        }
 
-                // Show progress and disable button
-                progressContainer.style.display = 'block';
-                uploadBtn.disabled = true;
-                uploadBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...';
-            }
-        });
+        var fileInput = document.getElementById('file');
+        if (fileInput) {
+            fileInput.addEventListener('change', function() {
+                if (this.files.length > 0) {
+                    const fileSize = this.files[0].size;
 
-        // File size validation on file selection
-        document.getElementById('file').addEventListener('change', function() {
-            if (this.files.length > 0) {
-                const fileSize = this.files[0].size;
-
-                if (fileSize > postMaxSize) {
-                    this.value = '';
-                    alert('File terlalu besar. Maksimal ukuran file adalah ' + formatBytes(postMaxSize));
+                    if (fileSize > postMaxSize) {
+                        this.value = '';
+                        alert('File terlalu besar. Maksimal ukuran file adalah ' + formatBytes(postMaxSize));
+                    }
                 }
-            }
-        });
+            });
+        }
 
         function formatBytes(bytes, decimals = 2) {
             if (bytes === 0) return '0 Bytes';
