@@ -77,13 +77,13 @@
                 <div class="card-body">
                     <form id="filterForm">
                         <div class="row">
-                            <div class="col-md-3">
+                            <div class="col-md-2">
                                 <div class="form-group">
                                     <label class="form-label">Date Start</label>
                                     <input type="date" class="form-control" id="date_start" name="date_start">
                                 </div>
                             </div>
-                            <div class="col-md-3">
+                            <div class="col-md-2">
                                 <div class="form-group">
                                     <label class="form-label">Date End</label>
                                     <input type="date" class="form-control" id="date_end" name="date_end">
@@ -107,6 +107,17 @@
                                         <option value="">All Categories</option>
                                         <?php foreach ($categories as $cat): ?>
                                             <option value="<?= esc($cat['category']) ?>"><?= esc($cat['category']) ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label class="form-label">Channel</label>
+                                    <select class="form-select" id="channel" name="channel">
+                                        <option value="">All Channels</option>
+                                        <?php foreach ($channels as $ch): ?>
+                                            <option value="<?= esc($ch['channel_name']) ?>"><?= esc($ch['channel_name']) ?></option>
                                         <?php endforeach; ?>
                                     </select>
                                 </div>
@@ -204,6 +215,11 @@
         initializeCharts();
         loadChartData();
 
+        // Main Category change event - load dependent categories
+        document.getElementById('main_category').addEventListener('change', function() {
+            loadCategoriesByMainCategory(this.value);
+        });
+
         // Apply filter button
         document.getElementById('applyFilter').addEventListener('click', function() {
             loadChartData();
@@ -212,9 +228,58 @@
         // Reset filter button
         document.getElementById('resetFilter').addEventListener('click', function() {
             document.getElementById('filterForm').reset();
+            // Reset category dropdown to show all categories
+            loadCategoriesByMainCategory('');
             loadChartData();
         });
     });
+
+    function loadCategoriesByMainCategory(mainCategory) {
+        const categorySelect = document.getElementById('category');
+
+        // Show loading state
+        categorySelect.innerHTML = '<option value="">Loading...</option>';
+        categorySelect.disabled = true;
+
+        // Prepare form data
+        const formData = new FormData();
+        formData.append('main_category', mainCategory);
+
+        // Add CSRF token if it exists
+        const csrfToken = document.querySelector('meta[name="<?= csrf_token() ?>"]');
+        if (csrfToken) {
+            formData.append('<?= csrf_token() ?>', csrfToken.getAttribute('content'));
+        }
+
+        fetch(`<?= base_url('dashboard/getCategoriesByMainCategory') ?>`, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                categorySelect.disabled = false;
+
+                if (data.status === 'success') {
+                    // Clear and rebuild category options
+                    categorySelect.innerHTML = '<option value="">All Categories</option>';
+
+                    data.data.forEach(function(category) {
+                        const option = document.createElement('option');
+                        option.value = category.category;
+                        option.textContent = category.category;
+                        categorySelect.appendChild(option);
+                    });
+                } else {
+                    categorySelect.innerHTML = '<option value="">Error loading categories</option>';
+                    console.error('Error loading categories:', data.message);
+                }
+            })
+            .catch(error => {
+                categorySelect.disabled = false;
+                categorySelect.innerHTML = '<option value="">Error loading categories</option>';
+                console.error('Error:', error);
+            });
+    }
 
     function initializeCharts() {
         // Status Chart (Pie)
