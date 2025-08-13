@@ -74,12 +74,62 @@
                 <button type="button" class="btn btn-success btn-sm" id="exportBtn">
                     <i class="fas fa-download me-1"></i>Export Excel
                 </button>
-                <button type="button" class="btn btn-primary btn-sm" onclick="$('#ticketsTable').DataTable().ajax.reload();">
+                <button type="button" class="btn btn-primary btn-sm" id="refreshBtn">
                     <i class="fas fa-sync-alt me-1"></i>Refresh
                 </button>
             </div>
         </div>
         <div class="card-body">
+            <!-- Search and Filter Controls -->
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <form method="GET" action="<?= current_url() ?>" id="searchForm">
+                        <div class="input-group input-group-sm flex-nowrap" style="max-width:400px;">
+                            <input type="text" class="form-control w-75 h-50" name="search" value="<?= esc($search ?? '') ?>"
+                                placeholder="Search tickets..." id="searchInput">
+
+                            <button class="btn btn-outline-secondary w-auto ms-1" type="submit" title="Search">
+                                <i class="fas fa-search"></i>
+                            </button>
+
+                            <?php if (!empty($search)): ?>
+                                <a href="<?= current_url() ?>" class="btn btn-outline-secondary w-auto ms-1" title="Clear">
+                                    <i class="fas fa-times"></i>
+                                </a>
+                            <?php endif; ?>
+                        </div>
+
+
+                        <!-- Hidden inputs to preserve other parameters -->
+                        <input type="hidden" name="page" value="1">
+                        <input type="hidden" name="per_page" value="<?= $perPage ?>">
+                    </form>
+                </div>
+                <div class="col-md-6">
+                    <div class="d-flex justify-content-end align-items-center">
+                        <label class="me-2">Show:</label>
+                        <select class="form-select form-select-sm" style="width: auto;" onchange="changePerPage(this.value)">
+                            <option value="10" <?= $perPage == 10 ? 'selected' : '' ?>>10</option>
+                            <option value="25" <?= $perPage == 25 ? 'selected' : '' ?>>25</option>
+                            <option value="50" <?= $perPage == 50 ? 'selected' : '' ?>>50</option>
+                            <option value="100" <?= $perPage == 100 ? 'selected' : '' ?>>100</option>
+                        </select>
+                        <span class="ms-2">entries</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results Info -->
+            <?php if (!empty($search)): ?>
+                <div class="alert  text-white bg-gradient-primary">
+                    <i class="fas fa-info-circle"></i>
+                    Found <?= number_format($totalFiltered) ?> results for "<strong><?= esc($search) ?></strong>"
+                    <?php if ($totalFiltered != $totalRecords): ?>
+                        (filtered from <?= number_format($totalRecords) ?> total entries)
+                    <?php endif; ?>
+                </div>
+            <?php endif; ?>
+
             <div class="table-responsive">
                 <table id="ticketsTable" class="table table-striped table-hover w-100">
                     <!-- <table id="ticketsTable" class="table table-striped table-bordered"> -->
@@ -100,10 +150,121 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <!-- Data will be loaded via AJAX -->
-                        -->
+                        <?php if (!empty($tickets)): ?>
+                            <?php foreach ($tickets as $ticket): ?>
+                                <tr>
+                                    <td><?= esc($ticket['ticket_id'] ?? '') ?></td>
+                                    <td><?= esc($ticket['subject'] ?? '') ?></td>
+                                    <td><?= esc($ticket['customer_name'] ?? '') ?></td>
+                                    <td>
+                                        <span class="badge <?= ($ticket['ticket_status_name'] ?? '') === 'CLOSED' ? 'bg-success' : 'bg-warning' ?>">
+                                            <?= esc($ticket['ticket_status_name'] ?? '') ?>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge <?=
+                                                            ($ticket['priority_name'] ?? '') === 'High' ? 'bg-danger' : (($ticket['priority_name'] ?? '') === 'Medium' ? 'bg-warning' : 'bg-info')
+                                                            ?>">
+                                            <?= esc($ticket['priority_name'] ?? '') ?>
+                                        </span>
+                                    </td>
+                                    <td><?= esc($ticket['witel'] ?? '') ?></td>
+                                    <td><?= esc($ticket['main_category'] ?? '') ?></td>
+                                    <td><?= esc($ticket['category'] ?? '') ?></td>
+                                    <td><?= !empty($ticket['date_created_at']) ? date('d/m/Y H:i', strtotime($ticket['date_created_at'])) : (!empty($ticket['date_start_interaction']) ? date('d/m/Y H:i', strtotime($ticket['date_start_interaction'])) : '-') ?></td>
+                                    <td><?= !empty($ticket['date_close']) ? date('d/m/Y H:i', strtotime($ticket['date_close'])) : '-' ?></td>
+                                    <td><?= esc($ticket['created_by_name'] ?? '') ?></td>
+                                    <td>
+                                        <button class="btn btn-sm btn-primary" onclick="viewTicket('<?= $ticket['ticket_id'] ?? '' ?>')">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <tr>
+                                <td colspan="12" class="text-center">No data available</td>
+                            </tr>
+                        <?php endif; ?>
                     </tbody>
                 </table>
+            </div>
+
+            <!-- Pagination Info and Controls -->
+            <div class="row mt-3">
+                <div class="col-md-6">
+                    <div class="dataTables_info">
+                        Showing <?= number_format($startRecord) ?> to <?= number_format($endRecord) ?> of
+                        <?= number_format($totalFiltered) ?> entries
+                        <?php if (!empty($search) && $totalFiltered != $totalRecords): ?>
+                            (filtered from <?= number_format($totalRecords) ?> total entries)
+                        <?php endif; ?>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <?php if ($totalPages > 1): ?>
+                        <nav aria-label="Table pagination">
+                            <ul class="pagination justify-content-end mb-0">
+                                <!-- Previous Page -->
+                                <?php if ($currentPage > 1): ?>
+                                    <li class="page-item">
+                                        <a class="page-link" href="<?= $baseUrl ?>?page=<?= $currentPage - 1 ?>&per_page=<?= $perPage ?>&search=<?= urlencode($search ?? '') ?>">
+                                            Previous
+                                        </a>
+                                    </li>
+                                <?php else: ?>
+                                    <li class="page-item disabled">
+                                        <span class="page-link">Previous</span>
+                                    </li>
+                                <?php endif; ?>
+
+                                <!-- Page Numbers -->
+                                <?php
+                                $startPage = max(1, $currentPage - 2);
+                                $endPage = min($totalPages, $currentPage + 2);
+
+                                if ($startPage > 1): ?>
+                                    <li class="page-item">
+                                        <a class="page-link" href="<?= $baseUrl ?>?page=1&per_page=<?= $perPage ?>&search=<?= urlencode($search ?? '') ?>">1</a>
+                                    </li>
+                                    <?php if ($startPage > 2): ?>
+                                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                                    <?php endif; ?>
+                                <?php endif; ?>
+
+                                <?php for ($i = $startPage; $i <= $endPage; $i++): ?>
+                                    <li class="page-item <?= $i == $currentPage ? 'active' : '' ?>">
+                                        <a class="page-link<?= $i == $currentPage ? ' bg-primary text-white border-white' : '' ?>" href="<?= $baseUrl ?>?page=<?= $i ?>&per_page=<?= $perPage ?>&search=<?= urlencode($search ?? '') ?>">
+                                            <?= $i ?>
+                                        </a>
+                                    </li>
+                                <?php endfor; ?>
+
+                                <?php if ($endPage < $totalPages): ?>
+                                    <?php if ($endPage < $totalPages - 1): ?>
+                                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                                    <?php endif; ?>
+                                    <li class="page-item">
+                                        <a class="page-link" href="<?= $baseUrl ?>?page=<?= $totalPages ?>&per_page=<?= $perPage ?>&search=<?= urlencode($search ?? '') ?>"><?= $totalPages ?></a>
+                                    </li>
+                                <?php endif; ?>
+
+                                <!-- Next Page -->
+                                <?php if ($currentPage < $totalPages): ?>
+                                    <li class="page-item">
+                                        <a class="page-link" href="<?= $baseUrl ?>?page=<?= $currentPage + 1 ?>&per_page=<?= $perPage ?>&search=<?= urlencode($search ?? '') ?>">
+                                            Next
+                                        </a>
+                                    </li>
+                                <?php else: ?>
+                                    <li class="page-item disabled">
+                                        <span class="page-link">Next</span>
+                                    </li>
+                                <?php endif; ?>
+                            </ul>
+                        </nav>
+                    <?php endif; ?>
+                </div>
             </div>
         </div>
     </div>
@@ -129,128 +290,11 @@
 <!-- Bootstrap 5 JS -->
 <script src="<?php echo base_url('assets/js/bootstrap.bundle.min.js'); ?>"></script>
 
-
-
-<!-- DataTables JS -->
-<script type="text/javascript" src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
-<script type="text/javascript" src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
-<script type="text/javascript" src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
-<script type="text/javascript" src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.bootstrap5.min.js"></script>
-<script type="text/javascript" src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
-<script type="text/javascript" src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap5.min.js"></script>
-
 <script>
     $(document).ready(function() {
-        // Initialize DataTable
-        var table = $('#ticketsTable').DataTable({
-            processing: true,
-            serverSide: true,
-            responsive: true,
-            ajax: {
-                url: '<?= base_url('dashboard/getDataTables') ?>',
-                type: 'POST',
-                data: function(d) {
-                    d.searchable_columns = ['ticket_id', 'subject', 'customer_name', 'ticket_status_name', 'priority_name',
-                        'witel', 'main_category', 'category', 'date_created', 'date_close', 'created_by_name'
-                    ];
-                    // d.search_value = d.search.value;
-                    return d;
-                },
-                error: function(xhr, error, thrown) {
-                    console.log('Ajax error:', error);
-                    alert('Error loading data. Please try again.');
-                }
-            },
-            columns: [{
-                    data: 'ticket_id',
-                    name: 'ticket_id',
-                    searchable: true
-                },
-                {
-                    data: 'subject',
-                    name: 'subject',
-                    searchable: true
-                },
-                {
-                    data: 'customer_name',
-                    name: 'customer_name',
-                    searchable: true
-                },
-                {
-                    data: 'ticket_status_name',
-                    name: 'ticket_status_name',
-                    orderable: false,
-                    searchable: true
-                },
-                {
-                    data: 'priority_name',
-                    name: 'priority_name',
-                    orderable: false,
-                    searchable: true
-                },
-                {
-                    data: 'witel',
-                    name: 'witel',
-                    searchable: true
-                },
-                {
-                    data: 'main_category',
-                    name: 'main_category',
-                    searchable: true
-                },
-                {
-                    data: 'category',
-                    name: 'category',
-                    searchable: true
-                },
-                {
-                    data: 'date_created',
-                    name: 'date_created',
-                    searchable: true
-                },
-                {
-                    data: 'date_close',
-                    name: 'date_close',
-                    searchable: true
-                },
-                {
-                    data: 'created_by_name',
-                    name: 'created_by_name',
-                    searchable: true
-                },
-                {
-                    data: 'actions',
-                    name: 'actions',
-                    orderable: false,
-                    searchable: false
-                }
-            ],
-            order: [
-                [0, 'asc']
-            ],
-            pageLength: 10,
-            lengthMenu: [
-                [10, 25, 50, 100, -1],
-                [10, 25, 50, 100, "All"]
-            ],
-            language: {
-                processing: '<div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>',
-                emptyTable: "No data available",
-                info: "Showing _START_ to _END_ of _TOTAL_ entries",
-                infoEmpty: "Showing 0 to 0 of 0 entries",
-                infoFiltered: "(filtered from _MAX_ total entries)",
-                lengthMenu: "Show _MENU_ entries",
-                search: "Search:",
-                zeroRecords: "No matching records found"
-            },
-            dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>' +
-                '<"row"<"col-sm-12"tr>>' +
-                '<"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>'
-        });
-
         // Export functionality
         $('#exportBtn').on('click', function() {
-            var searchValue = table.search();
+            var searchValue = '<?= esc($search ?? '') ?>';
             $('#loadingModal').modal('show');
 
             window.location.href = '<?= base_url('dashboard/export') ?>?search=' + encodeURIComponent(searchValue);
@@ -260,18 +304,37 @@
             }, 3000);
         });
 
-        // Auto refresh every 5 minutes
-        setInterval(function() {
-            table.ajax.reload(null, false);
-        }, 300000);
+        // Refresh functionality - reload page
+        $('#refreshBtn').on('click', function() {
+            location.reload();
+        });
 
-        // Enhanced search functionality
-        $('.dataTables_filter input').unbind().bind('keyup', function() {
-            var searchValue = $(this).val();
-            table.search(searchValue).draw();
+        // Real-time search with debounce
+        let searchTimeout;
+        $('#searchInput').on('input', function() {
+            clearTimeout(searchTimeout);
+            const searchValue = $(this).val();
+
+            searchTimeout = setTimeout(function() {
+                if (searchValue.length >= 3 || searchValue.length === 0) {
+                    $('#searchForm').submit();
+                }
+            }, 500); // 500ms delay
         });
     });
-</script>
 
+    // Function to change per page value
+    function changePerPage(perPage) {
+        const url = new URL(window.location);
+        url.searchParams.set('per_page', perPage);
+        url.searchParams.set('page', 1); // Reset to first page
+        window.location.href = url.toString();
+    }
+
+    // Function to view ticket details
+    function viewTicket(ticketId) {
+        window.location.href = '<?= base_url('dashboard/detail/') ?>' + ticketId;
+    }
+</script>
 
 <?= $this->endSection(); ?>

@@ -79,13 +79,54 @@ class TicketController extends BaseController
             return $redirect;
         }
 
+        // Get pagination parameters
+        $currentPage = (int) ($this->request->getGet('page') ?? 1);
+        $perPage = (int) ($this->request->getGet('per_page') ?? 10);
+        $search = $this->request->getGet('search') ?? '';
+
+        // Validate per page value
+        if (!in_array($perPage, [10, 25, 50, 100])) {
+            $perPage = 10;
+        }
+
+        // Calculate offset
+        $offset = ($currentPage - 1) * $perPage;
+
         // Get basic statistics
         $totalRecords = $this->serviceTicketModel->countAll();
         $totalClosed = $this->serviceTicketModel->where('ticket_status_name', 'CLOSED')->countAllResults();
         $totalOpen = $this->serviceTicketModel->where('ticket_status_name !=', 'CLOSED')->countAllResults();
 
-        // get all tickets data
-        $tickets = $this->serviceTicketModel->findAll();
+        // Build query with search
+        $builder = $this->serviceTicketModel;
+
+        if (!empty($search)) {
+            $builder = $builder->groupStart()
+                ->like('ticket_id', $search)
+                ->orLike('subject', $search)
+                ->orLike('customer_name', $search)
+                ->orLike('ticket_status_name', $search)
+                ->orLike('priority_name', $search)
+                ->orLike('witel', $search)
+                ->orLike('main_category', $search)
+                ->orLike('category', $search)
+                ->orLike('created_by_name', $search)
+                ->orLike('date_created_at', $search)
+                ->orLike('date_start_interaction', $search)
+                ->orLike('date_close', $search)
+                ->groupEnd();
+        }
+
+        // Get total filtered records
+        $totalFiltered = $builder->countAllResults(false);
+
+        // Get paginated tickets
+        $tickets = $builder->findAll($perPage, $offset);
+
+        // Calculate pagination info
+        $totalPages = ceil($totalFiltered / $perPage);
+        $startRecord = $offset + 1;
+        $endRecord = min($offset + $perPage, $totalFiltered);
 
         $data = [
             'title' => 'Service Tickets',
@@ -96,7 +137,15 @@ class TicketController extends BaseController
             'totalRecords' => $totalRecords,
             'totalClosed' => $totalClosed,
             'totalOpen' => $totalOpen,
-            'tickets' => $tickets
+            'tickets' => $tickets,
+            'currentPage' => $currentPage,
+            'perPage' => $perPage,
+            'totalPages' => $totalPages,
+            'totalFiltered' => $totalFiltered,
+            'startRecord' => $startRecord,
+            'endRecord' => $endRecord,
+            'search' => $search,
+            'baseUrl' => current_url()
         ];
 
         return view('pages/ticket', $data);
@@ -218,7 +267,13 @@ class TicketController extends BaseController
         }
 
         $data = [
-            'ticket' => $ticket
+            'ticket' => $ticket,
+            'title' => 'Ticket Detail - ' . $ticket['ticket_id'],
+            'breadcrumb' => [
+                ['label' => 'Dashboard', 'url' => base_url('dashboard')],
+                ['label' => 'Tickets', 'url' => base_url('dashboard/tickets')],
+                ['label' => 'Detail', 'active' => true]
+            ]
         ];
 
         return view('dashboard/detail', $data);

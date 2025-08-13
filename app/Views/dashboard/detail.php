@@ -5,6 +5,12 @@
 <div class="container-fluid mt-4">
     <div class="row">
         <div class="col-12">
+            <!-- tombol kembali  -->
+            <div class="d-flex justify-content-end mb-3">
+                <a href="<?= base_url('dashboard/ticket') ?>" class="btn bg-gradient-primary btn-sm">
+                    <i class="fas fa-arrow-left me-1"></i> Back to Tickets
+                </a>
+            </div>
             <div class="card">
                 <div class="card-header">
                     <h4><i class="fas fa-ticket-alt me-2"></i>Ticket Detail: <?= $ticket['ticket_id'] ?></h4>
