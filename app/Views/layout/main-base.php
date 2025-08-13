@@ -496,7 +496,7 @@
         <div class="card shadow-lg">
             <div class="card-header pb-0 pt-3 ">
                 <div class="float-start">
-                    <h5 class="mt-3 mb-0">Argon Configurator</h5>
+                    <h5 class="mt-3 mb-0">Dashboard Configurator</h5>
                     <p>See our dashboard options.</p>
                 </div>
                 <div class="float-end mt-4">
@@ -536,12 +536,12 @@
                 </div>
                 <p class="text-sm d-xl-none d-block mt-2">You can change the sidenav type just on desktop view.</p>
                 <!-- Navbar Fixed -->
-                <div class="d-flex my-3">
+                <!-- <div class="d-flex my-3">
                     <h6 class="mb-0">Navbar Fixed</h6>
                     <div class="form-check form-switch ps-0 ms-auto my-auto">
                         <input class="form-check-input mt-1 ms-auto" type="checkbox" id="navbarFixed" onclick="navbarFixed(this)">
                     </div>
-                </div>
+                </div> -->
                 <hr class="horizontal dark my-sm-4">
                 <div class="mt-2 mb-5 d-flex">
                     <h6 class="mb-0">Light / Dark</h6>
@@ -549,7 +549,7 @@
                         <input class="form-check-input mt-1 ms-auto" type="checkbox" id="dark-version" onclick="darkMode(this)">
                     </div>
                 </div>
-                <a class="btn bg-gradient-dark w-100" href="https://www.creative-tim.com/product/argon-dashboard">Free
+                <!-- <a class="btn bg-gradient-dark w-100" href="https://www.creative-tim.com/product/argon-dashboard">Free
                     Download</a>
                 <a class="btn btn-outline-dark w-100"
                     href="https://www.creative-tim.com/learning-lab/bootstrap/license/argon-dashboard">View documentation</a>
@@ -566,7 +566,7 @@
                         class="btn btn-dark mb-0 me-2" target="_blank">
                         <i class="fab fa-facebook-square me-1" aria-hidden="true"></i> Share
                     </a>
-                </div>
+                </div> -->
             </div>
         </div>
     </div>
