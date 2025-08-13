@@ -66,7 +66,7 @@
                         <div class="alert bg-gradient-warning text-dark mb-0 border-radius-lg">
                             <div class="d-flex align-items-center">
                                 <div class="spinner-border spinner-border-sm me-2 text-primary" role="status"></div>
-                                <span>Mengupload dan memproses file...</span>
+                                <span class="text-white">Mengupload dan memproses file...</span>
                             </div>
                             <div class="progress mt-2">
                                 <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary border-radius-lg" role="progressbar" style="width: 100%"></div>
