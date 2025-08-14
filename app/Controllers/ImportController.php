@@ -86,7 +86,7 @@ class ImportController extends BaseController
         $validation->setRules([
             'file' => [
                 'label' => 'File',
-                'rules' => 'uploaded[file]|ext_in[file,xlsx,xls,csv]|max_size[file,102400]'
+                'rules' => 'uploaded[file]|ext_in[file,xlsx,xls,csv]|max_size[file,512000]'
             ]
         ]);
 
@@ -97,9 +97,9 @@ class ImportController extends BaseController
         $file = $this->request->getFile('file');
 
         if ($file->isValid() && !$file->hasMoved()) {
-            if ($file->getSize() > 104857600) {
-                $this->logActivity('Import Service Ticket', 'File terlalu besar. Maksimal 100MB', 'error');
-                return redirect()->to('/import')->with('error', 'File terlalu besar. Maksimal 100MB');
+            if ($file->getSize() > 524288000) { // 500MB in bytes
+                $this->logActivity('Import Service Ticket', 'File terlalu besar. Maksimal 500MB', 'error');
+                return redirect()->to('/import')->with('error', 'File terlalu besar. Maksimal 500MB');
             }
 
             $fileName = $file->getRandomName();

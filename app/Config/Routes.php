@@ -16,6 +16,12 @@ $routes->group('', [], static function ($routes) {
     $routes->get('auth/logout', 'AuthController::logout');
 });
 
+// AUX routes (direct access, admin only)
+$routes->group('aux', ['filter' => 'admin'], static function ($routes) {
+    $routes->get('dashboard', 'AuxDashboardController::index');
+    $routes->get('/', 'AuxDashboardController::index');
+});
+
 // Import routes (admin only)
 $routes->group('', ['filter' => 'admin'], static function ($routes) {
     $routes->get('import', 'ImportController::index');
@@ -52,6 +58,22 @@ $routes->group('dashboard', ['filter' => 'auth'], static function ($routes) {
         $routes->post('activitylog/delete/(:num)', 'Dashboard::deleteActivityLog/$1');
         $routes->post('activitylog/bulk-delete', 'Dashboard::bulkDeleteActivityLog');
         $routes->post('activitylog/clear-all', 'Dashboard::clearAllActivityLogs');
+    });
+
+    // AUX routes (admin only)
+    $routes->group('aux', ['filter' => 'admin'], static function ($routes) {
+        $routes->get('/', 'AuxDashboardController::index');
+        $routes->get('dashboard', 'AuxDashboardController::index');
+        $routes->post('filter', 'AuxDashboardController::filter');
+        $routes->post('compute-buckets', 'AuxDashboardController::computeBuckets');
+        $routes->get('aux-details', 'AuxDashboardController::getAuxDetails');
+        $routes->get('export', 'AuxDashboardController::exportData');
+
+        $routes->get('upload', 'AuxUploadController::index');
+        $routes->get('upload/simple', 'AuxUploadController::simple');
+        $routes->post('upload/process', 'AuxUploadController::process');
+        $routes->get('upload/progress', 'AuxUploadController::checkProgress');
+        $routes->get('upload/test-limits', 'AuxUploadController::testLimits');
     });
 
     // Help routes

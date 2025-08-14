@@ -26,7 +26,7 @@ class Database extends Config
      */
     public array $default = [
         'DSN'          => '',
-        'hostname'     => 'localhost',
+        'hostname'     => '127.0.0.1',
         'username'     => 'root',  // Your MySQL username
         'password'     => 'p4rv1zk44n',      // Your MySQL password
         'database'     => 'reportci4',  // Your database name
@@ -53,6 +53,8 @@ class Database extends Config
             'MYSQLI_OPT_CONNECT_TIMEOUT' => 60,
             'MYSQLI_OPT_LOCAL_INFILE' => 1,
         ],
+        'socketPath'   => '/run/mysqld/mysqld.sock',
+        'unix_socket'  => '/run/mysqld/mysqld.sock',
     ];
 
     //    /**

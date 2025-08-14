@@ -686,7 +686,7 @@
 
     <script>
         // Get server POST max size from PHP
-        const postMaxSize = <?= json_encode($postMaxSizeBytes ?? 8388608) ?>;
+        const postMaxSize = <?= json_encode($postMaxSizeBytes ?? 524288000) ?>;
 
         var uploadForm = document.getElementById('uploadForm');
         if (uploadForm) {

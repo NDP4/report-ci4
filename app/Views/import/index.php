@@ -103,7 +103,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         // Get server POST max size from PHP
-        const postMaxSize = <?= json_encode($postMaxSizeBytes ?? 8388608) ?>;
+        const postMaxSize = <?= json_encode($postMaxSizeBytes ?? 524288000) ?>;
 
         document.getElementById('uploadForm').addEventListener('submit', function(e) {
             const fileInput = document.getElementById('file');
